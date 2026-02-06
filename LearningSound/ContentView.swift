@@ -33,8 +33,8 @@ struct ContentView: View {
                         .padding(20)
                 }
                 
-                if !speechManager.audioSamples.isEmpty {
-                    PitchLineShape(samples: speechManager.audioSamples)
+                if !speechManager.myData.isEmpty {
+                    PitchLineShape(samples: speechManager.myData)
                         .stroke(
                             LinearGradient(colors: [.blue, .purple, .pink], startPoint: .leading, endPoint: .trailing),
                             style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
@@ -48,7 +48,7 @@ struct ContentView: View {
             
             // 변환된 텍스트
             ScrollView {
-                Text(speechManager.transcript.isEmpty ? "말씀해 보세요..." : speechManager.transcript)
+                Text("말씀해 보세요...")
                     .font(.title2)
                     .multilineTextAlignment(.center)
                     .padding()
@@ -88,7 +88,7 @@ struct ContentView: View {
             
         }
         .onAppear {
-            speechManager.generateReferenceData(text: practiceText) { samples in
+            speechManager.createReference(text: practiceText) { samples in
                 self.targetSamples = samples
             }
         }
