@@ -42,6 +42,12 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     
     func startRecording() {
         myData.removeAll()
+        
+        // 오디오 세션 설정
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+        try? audioSession.setActive(true)
+        
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
         
@@ -49,7 +55,6 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             self.audioFile = try? AVAudioFile(forWriting: url, settings: format.settings)
         }
         
-        // 버퍼 사이즈 1024 (분석 속도를 위해 적절한 값)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { (buffer, when) in
             self.analyze(buffer: buffer)
             try? self.audioFile?.write(from: buffer)
@@ -57,7 +62,6 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         
         try? audioEngine.start()
         isRecording = true
-
     }
     
     func stopRecording() {
@@ -74,6 +78,31 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         } catch {
             print("재생 실패: \(error)")
         }
+    }
+    
+    func playReference(text: String) {
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = 0.4
+        
+        synthesizer.speak(utterance)
+    }
+    
+    private func configureAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setActive(true)
+        } catch {
+            print("오디오 세션 설정 실패: \(error)")
+        }
+    }
+    
+    func stopSpeaking() {
+        synthesizer.stopSpeaking(at: .immediate)
     }
     
     // [핵심] 오디오 데이터를 분석하는 함수
@@ -129,13 +158,6 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             if let sample = self.extractPitch(from: pcmBuffer){
                 self.targetData.append(sample)
             }
-        }
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        DispatchQueue.main.async{
-            self.onSynthesisFinished?(self.targetData)
-            self.onSynthesisFinished = nil
         }
     }
     

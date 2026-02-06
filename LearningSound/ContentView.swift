@@ -19,9 +19,22 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            Text(practiceText)
-                .font(.title2)
-                .foregroundColor(.gray)
+            HStack(alignment: .center, spacing: 15) {
+                Text(practiceText)
+                    .font(.title2)
+                    .multilineTextAlignment(.leading) // 문장이 길면 왼쪽 정렬
+                    .foregroundColor(.gray)
+                
+                Button(action: {
+                    speechManager.playReference(text: practiceText)
+                }) {
+                    Image(systemName: "speaker.wave.2.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(.blue)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
             
             // 그래프 영역
             ZStack {
