@@ -68,7 +68,7 @@ struct ContentView: View {
             // 변환된 텍스트
             VStack(spacing: 10) {
                 if myScore == 0{
-                    Text("try to record sentence..")
+                    Text("Tap the mic to start speaking...")
                         .font(.title2)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -139,12 +139,12 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            speechManager.createReference(text: practiceText)
+            speechManager.createReference(text: practiceText, language: selectedLanguage)
         }
         .alert("There is no recorded voice!", isPresented: $showNoAlert) {
-            Button("ok", role: .cancel){}
+            Button("OK", role: .cancel){}
         } message: {
-            Text("Please record your sentence first pressing the mic button")
+            Text("Please record your voice first by tapping the mic button.")
         }
         .sheet(isPresented: $showInfo){
             ScoreInfoView()
@@ -212,12 +212,12 @@ func smoothData(_ samples: [AudioSample]) -> [AudioSample] {
 
 func getFeedbackMessage(score: Int) -> String {
     if score >= 90{
-        return "Perfect match! \n your accent is perfectly similar to a native speaker's!"
+        return "Perfect match! \nYour intonation is perfectly matches a native speaker's!"
     } else if score >= 70 {
-        return "Great effort! \n let's get into the rhythm a little more!"
+        return "Great effort! \nLet's try to ride the rhythm a bit more!"
     } else if score > 0 {
-        return "Good try! \n listen and repeat one more time pressing the play button."
+        return "Good try! \nListen and repeat one more time by tapping the play button."
     } else {
-        return "try to record sentence.."
+        return "Tap the mic to start speaking..."
     }
 }

@@ -12,7 +12,7 @@ struct ScoreInfoView: View{
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 30){
-                    Text("How this App calculate your score?")
+                    Text("How we calculate your score?")
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.bottom, 10)
@@ -61,20 +61,20 @@ struct AppInfoView: View {
                         .fontWeight(.bold)
                         .padding(.bottom, 10)
                     InfoRow(icon: "lightbulb.fill",
-                            title: "Resonate with speakers in the world",
+                            title: "Resonate with speakers around the world",
                             description: "Mastering intonation is the key to speaking naturally. Resonate helps you internalize the rhythm and melody of native speakers through intuitive visual feedback.")
                     InfoRow(icon: "text.cursor",
-                            title: "1. select a sentence",
-                            description: "select sentence at home view or input the sentence that you like")
+                            title: "1. Select a sentence",
+                            description: "Choose a recommended sentence from the home screen, or type your own.")
                                         
                     InfoRow(icon: "ear",
-                            title: "2. learn native's speaker intonation",
-                            description: "listen what rhythm do native speakers speak in during watching flow of graph!")
+                            title: "2. Listen to the Rhythm",
+                            description: "Listen to the native speaker's rhythm while watching the flow of the graph.")
                     
                                         
                     InfoRow(icon: "mic.fill",
-                            title: "3. repeat (until you get a satisfying score)",
-                            description: "press the mic button and repeat the sentence as shown in the graph.")
+                            title: "3. Practice & Repeat",
+                            description: "Tap the mic button and repeat the sentence, trying to match the curve of the graph.")
                     
                 }
                 .padding(25)

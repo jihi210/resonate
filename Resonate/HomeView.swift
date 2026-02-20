@@ -5,17 +5,13 @@
 //  Created by 윤지희 on 2/20/26.
 //
 import SwiftUI
+import NaturalLanguage
 
 struct HomeView: View {
     @State private var customText: String = ""
-    @State private var customLanguage: String = "en-US"
+    @State private var isTypingCustom: Bool = false
     @State private var showAppInfoSheet = false
-    
-    let languages = [
-        ("🇺🇸 English", "en-US"),
-        ("🇨🇳 Chinese", "zh-CN"),
-        ("🇰🇷 Korean", "ko-KR")
-    ]
+    @State private var navigateToCustom: Bool = false
     
     let recommendedSentences = [
         ("I'm looking forward to it!", "en-US", "🇺🇸"),
@@ -25,59 +21,72 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 30){
-                    VStack(alignment: .leading, spacing: 15){
-                        Text("Today's recommended sentences")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        ForEach(recommendedSentences, id: \.0){ item in
-                            NavigationLink(destination: ContentView(practiceText: item.0, selectedLanguage: item.1)) {
-                                HStack {
-                                    Text(item.2)
-                                        .font(.title)
-                                    Text(item.0)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                }
-                                .padding()
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(15)
+                VStack(alignment: .leading, spacing: 20){
+                    Text("Today's sentences")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    ForEach(recommendedSentences, id: \.0){ item in
+                        NavigationLink(destination: ContentView(practiceText: item.0, selectedLanguage: item.1)) {
+                            HStack {
+                                Text(item.2)
+                                    .font(.title)
+                                Text(item.0)
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray)
                             }
+                            .padding()
+                            .cornerRadius(15)
                         }
                     }
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 15){
-                        Text("practice my own sentence")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        Picker("Language", selection: $customLanguage){
-                            ForEach(languages, id:\.1) {lang in
-                                Text(lang.0).tag(lang.1)
+                    if isTypingCustom {
+                        HStack {
+                            TextField("Type a sentence and press Return", text: $customText)
+                                .font(.headline)
+                                .onSubmit {
+                                    if !customText.isEmpty {
+                                        navigateToCustom = true
+                                    }
+                                }
+                            NavigationLink(
+                                destination: ContentView(practiceText: customText, selectedLanguage: detectLanguage(for: customText)),
+                                isActive: $navigateToCustom
+                            ) {EmptyView()}
+                                
+                            Button(action: {
+                                isTypingCustom = false
+                                customText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
                             }
                         }
-                        .pickerStyle(.segmented)
-                        
-                        HStack {
-                            TextField("input the sentence to practice", text: $customText)
-                                .textFieldStyle(.roundedBorder)
-                            NavigationLink(destination: ContentView(practiceText: customText, selectedLanguage: customLanguage)){
-                                Text("Start")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 8)
-                                    .background(customText.isEmpty ? Color.gray : Color.blue)
-                                    .cornerRadius(8)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(15)
+                    } else {
+                        Button(action: {
+                            withAnimation {isTypingCustom=true}
+                        }) {
+                            HStack{
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                                Text("Type your own sentence")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                Spacer()
                             }
-                            .disabled(customText.isEmpty)
+                            .padding()
+                            .background(Color.blue.opacity(0.08))
+                            .cornerRadius(15)
                         }
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                
             }
             .navigationTitle("Resonate")
             .toolbar {
@@ -91,6 +100,20 @@ struct HomeView: View {
             .sheet(isPresented: $showAppInfoSheet) {
                 AppInfoView()
             }
+        }
+    }
+    private func detectLanguage(for text: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        guard let langCode = recognizer.dominantLanguage?.rawValue else {return "en-US"}
+        
+        switch langCode {
+        case "ko": return "ko-KR"
+        case "en": return "en-US"
+        case "es": return "es-ES"
+        case "zh", "zh-Hans", "zh-Hant": return "zh-CN"
+        case "ja": return "ja-JP"
+        default: return "en-US" // 기본값은 영어
         }
     }
 }
