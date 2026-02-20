@@ -12,7 +12,9 @@ struct ContentView: View {
     @State private var showNoAlert = false
     @State private var myScore : Int = 0
     @State private var showInfo = false
-    let practiceText = "Nice to meet you"
+    var practiceText: String
+    var selectedLanguage: String
+    
     
     var body: some View {
         VStack(spacing: 20) {
@@ -39,7 +41,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Button(action: {
-                    speechManager.playReference(text: practiceText)
+                    speechManager.playReference(text: practiceText, language: selectedLanguage)
                 }) {
                     Image(systemName: "speaker.wave.2.circle.fill")
                         .resizable()

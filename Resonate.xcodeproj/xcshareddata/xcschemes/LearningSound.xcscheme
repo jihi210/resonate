@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "85E4F9C42F206E1B00B9092C"
-               BuildableName = "LearningSound.app"
-               BlueprintName = "LearningSound"
-               ReferencedContainer = "container:LearningSound.xcodeproj">
+               BuildableName = "Resonate.app"
+               BlueprintName = "Resonate"
+               ReferencedContainer = "container:Resonate.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,9 +47,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "85E4F9C42F206E1B00B9092C"
-            BuildableName = "LearningSound.app"
-            BlueprintName = "LearningSound"
-            ReferencedContainer = "container:LearningSound.xcodeproj">
+            BuildableName = "Resonate.app"
+            BlueprintName = "Resonate"
+            ReferencedContainer = "container:Resonate.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,9 +64,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "85E4F9C42F206E1B00B9092C"
-            BuildableName = "LearningSound.app"
-            BlueprintName = "LearningSound"
-            ReferencedContainer = "container:LearningSound.xcodeproj">
+            BuildableName = "Resonate.app"
+            BlueprintName = "Resonate"
+            ReferencedContainer = "container:Resonate.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

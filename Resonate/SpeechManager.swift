@@ -88,13 +88,13 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
     }
     
-    func playReference(text: String) {
+    func playReference(text: String, language: String) {
         setAudioSession(isRecording: false)
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = AVSpeechSynthesisVoice(language: language)
         utterance.rate = 0.4
         
         synthesizer.speak(utterance)

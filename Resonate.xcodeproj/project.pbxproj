@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		85E4F9C52F206E1B00B9092C /* LearningSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LearningSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		85E4F9C52F206E1B00B9092C /* Resonate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Resonate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8511B52D2F2077E40021ADFE /* Exceptions for "LearningSound" folder in "LearningSound" target */ = {
+		8511B52D2F2077E40021ADFE /* Exceptions for "Resonate" folder in "Resonate" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 85E4F9C42F206E1B00B9092C /* LearningSound */;
+			target = 85E4F9C42F206E1B00B9092C /* Resonate */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		85E4F9C72F206E1B00B9092C /* LearningSound */ = {
+		85E4F9C72F206E1B00B9092C /* Resonate */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8511B52D2F2077E40021ADFE /* Exceptions for "LearningSound" folder in "LearningSound" target */,
+				8511B52D2F2077E40021ADFE /* Exceptions for "Resonate" folder in "Resonate" target */,
 			);
-			path = LearningSound;
+			path = Resonate;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -45,7 +45,7 @@
 		85E4F9BC2F206E1B00B9092C = {
 			isa = PBXGroup;
 			children = (
-				85E4F9C72F206E1B00B9092C /* LearningSound */,
+				85E4F9C72F206E1B00B9092C /* Resonate */,
 				85E4F9C62F206E1B00B9092C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,7 +53,7 @@
 		85E4F9C62F206E1B00B9092C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				85E4F9C52F206E1B00B9092C /* LearningSound.app */,
+				85E4F9C52F206E1B00B9092C /* Resonate.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,9 +61,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		85E4F9C42F206E1B00B9092C /* LearningSound */ = {
+		85E4F9C42F206E1B00B9092C /* Resonate */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 85E4F9D02F206E1E00B9092C /* Build configuration list for PBXNativeTarget "LearningSound" */;
+			buildConfigurationList = 85E4F9D02F206E1E00B9092C /* Build configuration list for PBXNativeTarget "Resonate" */;
 			buildPhases = (
 				85E4F9C12F206E1B00B9092C /* Sources */,
 				85E4F9C22F206E1B00B9092C /* Frameworks */,
@@ -74,13 +74,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				85E4F9C72F206E1B00B9092C /* LearningSound */,
+				85E4F9C72F206E1B00B9092C /* Resonate */,
 			);
-			name = LearningSound;
+			name = Resonate;
 			packageProductDependencies = (
 			);
 			productName = LearningSound;
-			productReference = 85E4F9C52F206E1B00B9092C /* LearningSound.app */;
+			productReference = 85E4F9C52F206E1B00B9092C /* Resonate.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 85E4F9C02F206E1B00B9092C /* Build configuration list for PBXProject "LearningSound" */;
+			buildConfigurationList = 85E4F9C02F206E1B00B9092C /* Build configuration list for PBXProject "Resonate" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				85E4F9C42F206E1B00B9092C /* LearningSound */,
+				85E4F9C42F206E1B00B9092C /* Resonate */,
 			);
 		};
 /* End PBXProject section */
@@ -269,7 +269,7 @@
 				DEVELOPMENT_TEAM = 53K9889BDV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = LearningSound/Info.plist;
+				INFOPLIST_FILE = Resonate/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Resonate;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "mic test";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -305,7 +305,7 @@
 				DEVELOPMENT_TEAM = 53K9889BDV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = LearningSound/Info.plist;
+				INFOPLIST_FILE = Resonate/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Resonate;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "mic test";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -334,7 +334,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		85E4F9C02F206E1B00B9092C /* Build configuration list for PBXProject "LearningSound" */ = {
+		85E4F9C02F206E1B00B9092C /* Build configuration list for PBXProject "Resonate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				85E4F9CE2F206E1E00B9092C /* Debug */,
@@ -343,7 +343,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		85E4F9D02F206E1E00B9092C /* Build configuration list for PBXNativeTarget "LearningSound" */ = {
+		85E4F9D02F206E1E00B9092C /* Build configuration list for PBXNativeTarget "Resonate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				85E4F9D12F206E1E00B9092C /* Debug */,
