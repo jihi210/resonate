@@ -18,20 +18,9 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            HStack{
-                Text("Resonate")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Button(action: {
-                    showInfo=true
-                }){
-                    Image(systemName: "questionmark.circle")
-                        .font(.title2)
-                        .foregroundColor(.gray)
-                }
-            }
-            .padding(.top, 10)
+            Text("Resonate")
+                .font(.largeTitle)
+                .fontWeight(.bold)
             
             HStack(alignment: .center, spacing: 15) {
                 Text(practiceText)
@@ -84,10 +73,20 @@ struct ContentView: View {
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                 } else {
-                    Text("\(myScore) points / 100")
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
+                    HStack(alignment: .top){
+                        Text("\(myScore) points / 100")
+                            .font(.title3)
+                            .foregroundColor(.secondary)
+                        
+                        Button(action: {
+                            showInfo = true
+                        }) {
+                            Image(systemName: "info.circle")
+                                .font(.title3)
+                                .foregroundColor(.gray)
+                        }
+                        .offset(y: 5)
+                    }
                     
                     Text(getFeedbackMessage(score: myScore))
                         .font(.headline)
@@ -148,7 +147,7 @@ struct ContentView: View {
             Text("Please record your sentence first pressing the mic button")
         }
         .sheet(isPresented: $showInfo){
-            InfoView()
+            ScoreInfoView()
         }
     }
     

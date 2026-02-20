@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-struct InfoView: View{
+struct ScoreInfoView: View{
     @Environment(\.dismiss) var dismiss
     var body: some View {
         NavigationView {
@@ -50,6 +50,48 @@ struct InfoView: View{
     }
 }
 
+struct AppInfoView: View {
+    @Environment(\.dismiss) var dismiss
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 30) {
+                    Text("Welcome to Resonate")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.bottom, 10)
+                    InfoRow(icon: "lightbulb.fill",
+                            title: "Resonate with speakers in the world",
+                            description: "Mastering intonation is the key to speaking naturally. Resonate helps you internalize the rhythm and melody of native speakers through intuitive visual feedback.")
+                    InfoRow(icon: "text.cursor",
+                            title: "1. select a sentence",
+                            description: "select sentence at home view or input the sentence that you like")
+                                        
+                    InfoRow(icon: "ear",
+                            title: "2. learn native's speaker intonation",
+                            description: "listen what rhythm do native speakers speak in during watching flow of graph!")
+                    
+                                        
+                    InfoRow(icon: "mic.fill",
+                            title: "3. repeat (until you get a satisfying score)",
+                            description: "press the mic button and repeat the sentence as shown in the graph.")
+                    
+                }
+                .padding(25)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {dismiss()} label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.title3)
+                    }
+                }
+            }
+        }
+    }
+}
 struct InfoRow: View {
     var icon: String
     var title: String

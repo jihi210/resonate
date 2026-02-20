@@ -80,6 +80,17 @@ struct HomeView: View {
                 .padding()
             }
             .navigationTitle("Resonate")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showAppInfoSheet = true }) {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .sheet(isPresented: $showAppInfoSheet) {
+                AppInfoView()
+            }
         }
     }
 }
