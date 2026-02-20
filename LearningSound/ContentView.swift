@@ -9,12 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var speechManager = SpeechManager()
-    @State private var targetSamples: [AudioSample] = []
-    
+    @State private var showNoAlert = false
     let practiceText = "Nice to meet you"
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 20) {
             Text("Resonate")
                 .font(.largeTitle)
                 .fontWeight(.bold)
@@ -24,24 +23,26 @@ struct ContentView: View {
                     .font(.title2)
                     .multilineTextAlignment(.leading) // 문장이 길면 왼쪽 정렬
                     .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Button(action: {
                     speechManager.playReference(text: practiceText)
                 }) {
                     Image(systemName: "speaker.wave.2.circle.fill")
-                        .font(.system(size: 30))
+                        .resizable()
+                        .frame(width: 44, height: 44)
                         .foregroundColor(.blue)
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 20)
+            .padding(.top, 25)
             
             // 그래프 영역
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.black.opacity(0.05))
-                if !targetSamples.isEmpty {
-                    PitchLineShape(samples: targetSamples)
+                if !speechManager.targetData.isEmpty {
+                    PitchLineShape(samples: smoothData(speechManager.targetData))
                         .stroke(Color.gray.opacity(0.4), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                         .padding(20)
                 }
@@ -57,53 +58,64 @@ struct ContentView: View {
                 }
             }
             .frame(height: 250)
-            .padding()
+            .clipped()
+            .padding(.horizontal, 20)
             
             // 변환된 텍스트
-            ScrollView {
+            VStack {
                 Text("말씀해 보세요...")
                     .font(.title2)
+                    .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
-                    .padding()
             }
-            .frame(height: 150)
+            .frame(maxWidth: .infinity)
+            .frame(height: 120)
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(15)
+            .padding(.horizontal, 20)
             
-            // 녹음 버튼
-            Button(action: {
-                if speechManager.isRecording {
-                    speechManager.stopRecording()
-                } else {
-                    speechManager.startRecording()
+            Spacer()
+            
+            HStack(spacing: 50){
+                Button(action: {
+                    if speechManager.isRecording {
+                        speechManager.stopRecording()
+                    } else {
+                        speechManager.startRecording()
+                    }
+                }) {
+                    Image(systemName: speechManager.isRecording ? "stop.fill" : "mic.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.white)
+                        .padding(20)
+                        .background(speechManager.isRecording ? Color.red : Color.blue)
+                        .clipShape(Circle())
                 }
-            }) {
-                Image(systemName: speechManager.isRecording ? "stop.fill" : "mic.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(.white)
-                    .padding(20)
-                    .background(speechManager.isRecording ? Color.red : Color.blue)
-                    .clipShape(Circle())
-            }
-            
-            Button(action: {
-                speechManager.playRecording()
-            }) {
-                HStack {
+                
+                Button(action: {
+                    if speechManager.myData.isEmpty {
+                        showNoAlert = true
+                    } else {
+                        speechManager.playRecording()
+                    }
+                }) {
                     Image(systemName: "play.fill")
-                    Text("내 녹음 듣기")
+                        .font(.system(size: 35))
+                        .foregroundColor(.white)
+                        .frame(width: 80, height: 80)
+                        .background(speechManager.isRecording ? Color.blue.opacity(0.5) : Color.blue)
+                        .clipShape(Circle())
                 }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
+                .disabled(speechManager.isRecording)
             }
-            .disabled(speechManager.isRecording)
-            .opacity(speechManager.isRecording ? 0.5 : 1.0)
-            
         }
         .onAppear {
-            speechManager.createReference(text: practiceText) { samples in
-                self.targetSamples = samples
-            }
+            speechManager.createReference(text: practiceText)
+        }
+        .alert("There is no recorded voice!", isPresented: $showNoAlert) {
+            Button("ok", role: .cancel){}
+        } message: {
+            Text("Please record your sentence first pressing the mic button")
         }
     }
     
@@ -120,6 +132,7 @@ struct ContentView: View {
             return LinearGradient(colors: [.orange, .red], startPoint: .bottom, endPoint: .top) // 고음
         }
     }
+    
 }
 
 struct PitchLineShape: Shape {
@@ -150,4 +163,17 @@ struct PitchLineShape: Shape {
         }
         return path
     }
+}
+
+func smoothData(_ samples: [AudioSample]) -> [AudioSample] {
+    guard samples.count > 2 else {return samples}
+    var smoothedSamples = samples
+    for i in 1..<samples.count-1{
+        let prev = samples[i-1].frequency
+        let curr = samples[i].frequency
+        let next = samples[i+1].frequency
+        let averagedFrequency = (prev*0.2)+(curr*0.6)+(next*0.2)
+        smoothedSamples[i] = AudioSample(magnitude: samples[i].magnitude, frequency: averagedFrequency)
+    }
+    return smoothedSamples
 }

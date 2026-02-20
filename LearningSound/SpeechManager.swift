@@ -29,7 +29,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     private var audioPlayer: AVAudioPlayer?
     private var recordingURL: URL?
     
-    private var targetData: [AudioSample] = []
+    @Published var targetData: [AudioSample] = []
     private var onSynthesisFinished: (([AudioSample]) -> Void)?
     
     
@@ -40,14 +40,23 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     }
     
     
+    private func setAudioSession(isRecording: Bool){
+        let session = AVAudioSession.sharedInstance()
+        do{
+            if isRecording {
+                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            } else {
+                try session.setCategory(.playback, mode: .default)
+            }
+            try session.setActive(true)
+        } catch {
+            print("fail to set audio session: \(error)")
+        }
+    }
+    
     func startRecording() {
+        setAudioSession(isRecording: true)
         myData.removeAll()
-        
-        // 오디오 세션 설정
-        let audioSession = AVAudioSession.sharedInstance()
-        try? audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-        try? audioSession.setActive(true)
-        
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
         
@@ -60,27 +69,27 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             try? self.audioFile?.write(from: buffer)
         }
         
+        audioEngine.prepare()
         try? audioEngine.start()
         isRecording = true
-    }
-    
-    func stopRecording() {
-        audioEngine.inputNode.removeTap(onBus: 0)
-        audioEngine.stop()
-        isRecording = false
     }
     
     func playRecording(){
         guard let url = recordingURL else {return}
         do {
+            setAudioSession(isRecording: false)
+            audioPlayer?.stop()
             audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.volume = 1.0
+            audioPlayer?.prepareToPlay()
             audioPlayer?.play()
         } catch {
-            print("재생 실패: \(error)")
+            print("fail to play audio: \(error)")
         }
     }
     
     func playReference(text: String) {
+        setAudioSession(isRecording: false)
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
@@ -91,15 +100,14 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         synthesizer.speak(utterance)
     }
     
-    private func configureAudioSession() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
-            try session.setActive(true)
-        } catch {
-            print("오디오 세션 설정 실패: \(error)")
-        }
+    
+    func stopRecording() {
+        audioEngine.inputNode.removeTap(onBus: 0)
+        audioEngine.stop()
+        audioFile = nil
+        isRecording = false
     }
+    
     
     func stopSpeaking() {
         synthesizer.stopSpeaking(at: .immediate)
@@ -111,7 +119,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         
         DispatchQueue.main.async {
             // 소리가 너무 작으면(잡음) 분석 안 함
-            if sample.magnitude > 0.5 {
+            if sample.magnitude > 1.5 { // 잡음 필터 상향 0.5 -> 1.5
                 self.myData.append(sample)
                 if self.myData.count > 50 { self.myData.removeFirst() }
             }
@@ -137,17 +145,13 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         
         // 제로 크로싱 횟수를 주파수로 대략 변환
         let frequency = Float(zeroCrossings) / (Float(length) / Float(buffer.format.sampleRate)) / 2.0
-        
         return AudioSample(magnitude: rms*50, frequency: frequency)
         
     }
     
-    func createReference(text: String, language: String = "en-US", completion: @escaping ([AudioSample]) -> Void) {
+    func createReference(text: String, language: String = "en-US") {
         synthesizer = AVSpeechSynthesizer()
-        synthesizer.delegate = self
-        
-        self.onSynthesisFinished = completion
-        self.targetData = []
+        self.targetData.removeAll()
     
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
@@ -156,7 +160,9 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         synthesizer.write(utterance) { buffer in
             guard let pcmBuffer = buffer as? AVAudioPCMBuffer else {return}
             if let sample = self.extractPitch(from: pcmBuffer){
-                self.targetData.append(sample)
+                DispatchQueue.main.async{
+                    self.targetData.append(sample)
+                }
             }
         }
     }
