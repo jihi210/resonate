@@ -10,13 +10,26 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var speechManager = SpeechManager()
     @State private var showNoAlert = false
+    @State private var myScore : Int = 0
+    @State private var showInfo = false
     let practiceText = "Nice to meet you"
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Resonate")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+            HStack{
+                Text("Resonate")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Button(action: {
+                    showInfo=true
+                }){
+                    Image(systemName: "questionmark.circle")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.top, 10)
             
             HStack(alignment: .center, spacing: 15) {
                 Text(practiceText)
@@ -80,8 +93,11 @@ struct ContentView: View {
                 Button(action: {
                     if speechManager.isRecording {
                         speechManager.stopRecording()
+                        myScore = speechManager.calculateScore()
+                        print("내 점수: \(myScore)/100 점!")
                     } else {
                         speechManager.startRecording()
+                        myScore = 0
                     }
                 }) {
                     Image(systemName: speechManager.isRecording ? "stop.fill" : "mic.fill")
@@ -116,6 +132,9 @@ struct ContentView: View {
             Button("ok", role: .cancel){}
         } message: {
             Text("Please record your sentence first pressing the mic button")
+        }
+        .sheet(isPresented: $showInfo){
+            InfoView()
         }
     }
     

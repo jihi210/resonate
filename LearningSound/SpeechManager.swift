@@ -167,5 +167,44 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
     }
     
+    func calculateScore() -> Int {
+        let targetFreqs = targetData.map { $0.frequency }
+        let myFreqs = myData.map { $0.frequency }
+        let normTarget = nomalize(targetFreqs)
+        let normMy = nomalize(myFreqs)
+        
+        let resampledTarget = resample(normTarget, to:100)
+        let resampledMy = resample(normMy, to:100)
+        
+        var totalDifference: Float = 0
+        for i in 0..<100{
+            totalDifference += abs(resampledTarget[i]-resampledMy[i])
+        }
+        let averageDifference = totalDifference / 100.0
+        let score = max(0, 100-Int(averageDifference*150))
+        return score
+    }
+    
+    private func nomalize(_ data:[Float]) -> [Float] {
+        guard let minVal = data.min(), let maxVal = data.max(), maxVal>minVal else {return data}
+        let range = maxVal - minVal
+        return data.map{($0-minVal)/range}
+    }
+    
+    private func resample(_ data: [Float], to targetCount: Int)->[Float]{
+        guard !data.isEmpty else {return []}
+        var result: [Float] = []
+        for i in 0..<targetCount {
+            let index = Float(i)*Float(data.count-1)/Float(targetCount-1)
+            let lowerIndex = Int(floor(index))
+            let upperIndex = min(lowerIndex+1, data.count-1)
+            let weight = index - Float(lowerIndex)
+            
+            //선형보간법
+            result.append(data[lowerIndex]*(1-weight)+data[upperIndex]*weight)
+        }
+        return result
+    }
+    
 }
 
