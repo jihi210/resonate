@@ -173,14 +173,18 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         let normTarget = nomalize(targetFreqs)
         let normMy = nomalize(myFreqs)
         
+        guard targetFreqs.count>1, myFreqs.count>1 else {return 0}
+        
         let resampledTarget = resample(normTarget, to:100)
         let resampledMy = resample(normMy, to:100)
         
         var totalDifference: Float = 0
+        let compareCount = min(resampledTarget.count, resampledMy.count)
+        guard compareCount > 0 else {return 0}
         for i in 0..<100{
             totalDifference += abs(resampledTarget[i]-resampledMy[i])
         }
-        let averageDifference = totalDifference / 100.0
+        let averageDifference = totalDifference / Float(compareCount)
         let score = max(0, 100-Int(averageDifference*150))
         return score
     }

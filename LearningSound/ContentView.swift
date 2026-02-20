@@ -75,11 +75,23 @@ struct ContentView: View {
             .padding(.horizontal, 20)
             
             // 변환된 텍스트
-            VStack {
-                Text("말씀해 보세요...")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
+            VStack(spacing: 10) {
+                if myScore == 0{
+                    Text("try to record sentence..")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                } else {
+                    Text("\(myScore) points / 100")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                    
+                    Text(getFeedbackMessage(score: myScore))
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 120)
@@ -195,4 +207,16 @@ func smoothData(_ samples: [AudioSample]) -> [AudioSample] {
         smoothedSamples[i] = AudioSample(magnitude: samples[i].magnitude, frequency: averagedFrequency)
     }
     return smoothedSamples
+}
+
+func getFeedbackMessage(score: Int) -> String {
+    if score >= 90{
+        return "Perfect match! \n your accent is perfectly similar to a native speaker's!"
+    } else if score >= 70 {
+        return "Great effort! \n let's get into the rhythm a little more!"
+    } else if score > 0 {
+        return "Good try! \n listen and repeat one more time pressing the play button."
+    } else {
+        return "try to record sentence.."
+    }
 }
