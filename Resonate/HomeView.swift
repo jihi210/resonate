@@ -13,7 +13,10 @@ struct HomeView: View {
     @State private var showAppInfoSheet = false
     @State private var navigateToCustom: Bool = false
     
-    let recommendedSentences = [
+    @FocusState private var isInputFocused: Bool
+    @State private var targetText: String = ""
+    @State private var targetLang: String = "en-US"
+    @State private var recommendedSentences = [
         ("I'm looking forward to it!", "en-US", "🇺🇸"),
         ("같이 밥 먹을래?", "ko-KR", "🇰🇷")
     ]
@@ -25,6 +28,8 @@ struct HomeView: View {
                     Text("Today's sentences")
                         .font(.title2)
                         .fontWeight(.bold)
+                        .padding(.top, 10)
+                    
                     ForEach(recommendedSentences, id: \.0){ item in
                         NavigationLink(destination: ContentView(practiceText: item.0, selectedLanguage: item.1)) {
                             HStack {
@@ -33,27 +38,56 @@ struct HomeView: View {
                                 Text(item.0)
                                     .font(.headline)
                                     .foregroundColor(.primary)
+                                    .lineLimit(1)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.gray)
                             }
                             .padding()
                             .cornerRadius(15)
+                            .contextMenu {
+                                if item.0=="I'm looking forward to it!" || item.0=="같이 밥 먹을래?" {
+                                    Button(action: {
+                                        
+                                    }) {
+                                        Label("Default Sentence", systemImage: "lock.fill")
+                                    }
+                                } else {
+                                    Button(role: .destructive, action: {
+                                        withAnimation {
+                                            recommendedSentences.removeAll {$0.0==item.0}
+                                        }
+                                    }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     }
                     if isTypingCustom {
                         HStack {
                             TextField("Type a sentence and press Return", text: $customText)
                                 .font(.headline)
+                                .focused($isInputFocused)
+                                .onAppear() { isInputFocused = true }
+                                .submitLabel(.done)
                                 .onSubmit {
                                     if !customText.isEmpty {
+                                        let detectedLang = detectLanguage(for: customText)
+                                        let flag = getFlag(for: detectedLang)
+                                        
+                                        if !recommendedSentences.contains(where: {$0.0==customText}) {
+                                            recommendedSentences.append((customText, detectedLang, flag))
+                                        }
+                                        targetText = customText
+                                        targetLang = detectedLang
                                         navigateToCustom = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5){
+                                            customText = ""
+                                            isTypingCustom = false
+                                        }
                                     }
                                 }
-                            NavigationLink(
-                                destination: ContentView(practiceText: customText, selectedLanguage: detectLanguage(for: customText)),
-                                isActive: $navigateToCustom
-                            ) {EmptyView()}
                                 
                             Button(action: {
                                 isTypingCustom = false
@@ -80,13 +114,18 @@ struct HomeView: View {
                                 Spacer()
                             }
                             .padding()
-                            .background(Color.blue.opacity(0.08))
+                            .background(Color.white)
                             .cornerRadius(15)
+                            
                         }
                     }
+                    NavigationLink(
+                        destination: ContentView(practiceText: targetText, selectedLanguage: targetLang),
+                        isActive: $navigateToCustom
+                    ) {EmptyView()}
                 }
                 .padding(.horizontal, 20)
-                
+                .padding(.bottom, 30)
             }
             .navigationTitle("Resonate")
             .toolbar {
@@ -98,7 +137,8 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showAppInfoSheet) {
-                AppInfoView()
+//                AppInfoView()
+                Text("App Info View")
             }
         }
     }
@@ -114,6 +154,17 @@ struct HomeView: View {
         case "zh", "zh-Hans", "zh-Hant": return "zh-CN"
         case "ja": return "ja-JP"
         default: return "en-US" // 기본값은 영어
+        }
+    }
+    
+    private func getFlag(for languageCode: String)-> String {
+        switch languageCode {
+            case "ko-KR": return "🇰🇷"
+            case "en-US": return "🇺🇸"
+            case "es-ES": return "🇪🇸"
+            case "zh-CN": return "🇨🇳"
+            case "ja-JP": return "🇯🇵"
+            default: return "💬" // 감지할 수 없는 언어는 말풍선으로!
         }
     }
 }
