@@ -10,8 +10,12 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var speechManager = SpeechManager()
     @State private var showNoAlert = false
-    @State private var myScore : Int = 0
     @State private var showInfo = false
+    
+    @State private var myScore : Int = 0
+    @State private var intonationScore : Double = 0.0
+    @State private var sttScore : Double = 0.0
+    
     var practiceText: String
     var selectedLanguage: String
     
@@ -106,8 +110,17 @@ struct ContentView: View {
                 Button(action: {
                     if speechManager.isRecording {
                         speechManager.stopRecording()
-                        myScore = speechManager.calculateScore()
-                        print("내 점수: \(myScore)/100 점!")
+                        let pearsonScore = speechManager.pearsonScore()
+                        self.intonationScore = pearsonScore
+                        if let audioURL = speechManager.recordingURL {
+                            speechManager.sttScore(audioURL: audioURL, targetText: practiceText, languageCode: selectedLanguage) { sttScore in
+                                DispatchQueue.main.async {
+                                    self.sttScore = sttScore
+                                    self.myScore = Int((pearsonScore*0.7)+(sttScore*0.3))
+                                    print("\(self.myScore)/100점! (억양: \(Int(pearsonScore)), 발음: \(Int(sttScore)))")
+                                }
+                            }
+                        }
                     } else {
                         speechManager.startRecording()
                         myScore = 0

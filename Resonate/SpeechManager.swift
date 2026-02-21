@@ -7,7 +7,7 @@
 import SwiftUI
 import Combine
 import Foundation
-import Speech
+import Speech // to STT
 import AVFoundation
 import Accelerate // [핵심] 애플의 고속 수학 계산 라이브러리
 
@@ -15,7 +15,7 @@ import Accelerate // [핵심] 애플의 고속 수학 계산 라이브러리
 struct AudioSample: Identifiable {
     let id = UUID()
     let magnitude: Float // 소리 크기 (그래프 높이)
-    let frequency: Float // 주파수/높낮이 (그래프 색상)
+    let frequency: Double // 주파수/높낮이 (그래프 색상)
 }
 
 class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
@@ -27,7 +27,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     
     private var audioFile: AVAudioFile?
     private var audioPlayer: AVAudioPlayer?
-    private var recordingURL: URL?
+    var recordingURL: URL?
     
     @Published var targetData: [AudioSample] = []
     private var onSynthesisFinished: (([AudioSample]) -> Void)?
@@ -93,6 +93,10 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
+        
+        if isRecording {
+            print("")
+        }
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
         utterance.rate = 0.4
@@ -144,7 +148,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
         
         // 제로 크로싱 횟수를 주파수로 대략 변환
-        let frequency = Float(zeroCrossings) / (Float(length) / Float(buffer.format.sampleRate)) / 2.0
+        let frequency = Double(zeroCrossings) / (Double(length) / Double(buffer.format.sampleRate)) / 2.0
         return AudioSample(magnitude: rms*50, frequency: frequency)
         
     }
@@ -167,42 +171,41 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
     }
     
-    func calculateScore() -> Int {
+    func pearsonScore() -> Double {
         let targetFreqs = targetData.map { $0.frequency }
         let myFreqs = myData.map { $0.frequency }
-        let normTarget = nomalize(targetFreqs)
-        let normMy = nomalize(myFreqs)
+        let normTarget = normalize(targetFreqs)
+        let normMy = normalize(myFreqs)
         
         guard targetFreqs.count>1, myFreqs.count>1 else {return 0}
         
         let resampledTarget = resample(normTarget, to:100)
         let resampledMy = resample(normMy, to:100)
         
-        var totalDifference: Float = 0
-        let compareCount = min(resampledTarget.count, resampledMy.count)
-        guard compareCount > 0 else {return 0}
-        for i in 0..<100{
-            totalDifference += abs(resampledTarget[i]-resampledMy[i])
+        let correlation = pearsonCorrelation(x: resampledTarget, y: resampledMy)
+        var intonationScore = 0.0
+        if correlation>0 {
+            intonationScore = correlation*100
+        } else {
+            intonationScore = 0
         }
-        let averageDifference = totalDifference / Float(compareCount)
-        let score = max(0, 100-Int(averageDifference*150))
-        return score
+        return intonationScore
     }
     
-    private func nomalize(_ data:[Float]) -> [Float] {
+    private func normalize(_ data:[Double]) -> [Double] {
         guard let minVal = data.min(), let maxVal = data.max(), maxVal>minVal else {return data}
         let range = maxVal - minVal
         return data.map{($0-minVal)/range}
     }
     
-    private func resample(_ data: [Float], to targetCount: Int)->[Float]{
+    private func resample(_ data: [Double], to targetCount: Int)->[Double]{
         guard !data.isEmpty else {return []}
-        var result: [Float] = []
+        var result: [Double] = []
         for i in 0..<targetCount {
-            let index = Float(i)*Float(data.count-1)/Float(targetCount-1)
+            let index = Double(i)*Double(data.count-1)/Double(targetCount-1)
             let lowerIndex = Int(floor(index))
             let upperIndex = min(lowerIndex+1, data.count-1)
-            let weight = index - Float(lowerIndex)
+            let weight = index - Double(lowerIndex)
             
             //선형보간법
             result.append(data[lowerIndex]*(1-weight)+data[upperIndex]*weight)
@@ -210,5 +213,75 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         return result
     }
     
+    private func pearsonCorrelation(x: [Double], y: [Double]) -> Double {
+        //선형 보간 제대로 안됐으면 비교 불가
+        guard x.count == y.count, x.count>0 else { return 0.0 }
+        
+        let n = Double(x.count)
+        let meanX = x.reduce(0, +)/n // 타켓 그래프의 평균값
+        let meanY = y.reduce(0, +)/n
+        
+        var numerator = 0.0
+        var denomX = 0.0
+        var denomY = 0.0
+        
+        for i in 0..<x.count {
+            let diffX = x[i]-meanX
+            let diffY = y[i]-meanY
+            numerator += diffX*diffY
+            denomX += diffX*diffX
+            denomY += diffY*diffY
+        }
+        if denomX==0 || denomY==0 {return 0.0}
+        return numerator/sqrt(denomX*denomY)
+    }
+    
+    func sttScore(audioURL: URL, targetText: String, languageCode: String, completion: @escaping(Double) -> Void) {
+        var localeIdentifier = "en-US"
+        if languageCode.hasPrefix("ko"){
+            localeIdentifier = "ko-KR"
+        } else if languageCode.hasPrefix("zh"){
+            localeIdentifier = "zh-CN"
+        } else if languageCode.hasPrefix("en"){
+            localeIdentifier = "en-US"
+        } else {
+            localeIdentifier = languageCode
+        }
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)), recognizer.isAvailable else {
+            print("음성 인식을 사용할 수 없습니다. (언어: \(localeIdentifier))")
+            completion(0.0)
+            return
+        }
+        let request = SFSpeechURLRecognitionRequest(url: audioURL)
+        recognizer.recognitionTask(with: request) { result, error in
+            if let error = error {
+                print("STT 에러 발생: \(error.localizedDescription)")
+                completion(0.0)
+                return
+            }
+            guard let result = result else {return}
+            
+            if result.isFinal {
+                let recognizedText = result.bestTranscription.formattedString
+                print("[\(localeIdentifier)] 내가 말한 문장: \(recognizedText)")
+                let matchScore = self.textSimilarity(target: targetText, recognized: recognizedText)
+                completion(matchScore)
+            }
+        }
+    }
+    
+    private func textSimilarity(target: String, recognized: String) -> Double {
+        let targetWords = target.lowercased().components(separatedBy: .punctuationCharacters).joined().split(separator: " ")
+        let recognizedWords = recognized.lowercased().components(separatedBy: .punctuationCharacters).joined().split(separator: " ")
+        guard !targetWords.isEmpty else {return 0.0}
+        var matchCount = 0
+        for word in recognizedWords {
+            if targetWords.contains(word) {
+                matchCount += 1
+            }
+        }
+        let ratio = Double(matchCount)/Double(targetWords.count)
+        return min(ratio*100, 100.0)
+    }
 }
 
