@@ -39,8 +39,9 @@ struct ContentView: View {
                     Image(systemName: "speaker.wave.2.circle.fill")
                         .resizable()
                         .frame(width: 44, height: 44)
-                        .foregroundColor(.blue)
+                        .foregroundColor((speechManager.isRecording || speechManager.isPlayingRecorded) ? .blue.opacity(0.5) : .blue)
                 }
+                .disabled(speechManager.isRecording || speechManager.isPlayingRecorded)
             }
             .padding(.horizontal)
             .padding(.top, 25)
@@ -92,7 +93,7 @@ struct ContentView: View {
                         .offset(y: 5)
                     }
                     
-                    Text(getFeedbackMessage(score: myScore))
+                    Text(getFeedbackMessage(intonationScore: intonationScore, sttScore: sttScore))
                         .font(.headline)
                         .multilineTextAlignment(.center)
                         .foregroundColor(.secondary)
@@ -130,9 +131,10 @@ struct ContentView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.white)
                         .padding(20)
-                        .background(speechManager.isRecording ? Color.red : Color.blue)
+                        .background((speechManager.isPlayingRecorded || speechManager.isPlayingReference) ? Color.gray : (speechManager.isRecording ? Color.red : Color.blue))
                         .clipShape(Circle())
                 }
+                .disabled(speechManager.isPlayingRecorded || speechManager.isPlayingReference)
                 
                 Button(action: {
                     if speechManager.myData.isEmpty {
@@ -145,10 +147,10 @@ struct ContentView: View {
                         .font(.system(size: 35))
                         .foregroundColor(.white)
                         .frame(width: 80, height: 80)
-                        .background(speechManager.isRecording ? Color.blue.opacity(0.5) : Color.blue)
+                        .background((speechManager.isRecording || speechManager.isPlayingReference) ? Color.blue.opacity(0.5) : Color.blue)
                         .clipShape(Circle())
                 }
-                .disabled(speechManager.isRecording)
+                .disabled(speechManager.isRecording || speechManager.isPlayingReference)
             }
         }
         .onAppear {
@@ -223,14 +225,18 @@ func smoothData(_ samples: [AudioSample]) -> [AudioSample] {
     return smoothedSamples
 }
 
-func getFeedbackMessage(score: Int) -> String {
-    if score >= 90{
-        return "Perfect match! \nYour intonation is perfectly matches a native speaker's!"
-    } else if score >= 70 {
-        return "Great effort! \nLet's try to ride the rhythm a bit more!"
-    } else if score > 0 {
-        return "Good try! \nListen and repeat one more time by tapping the play button."
-    } else {
+func getFeedbackMessage(intonationScore: Double, sttScore: Double) -> String {
+    if intonationScore==0 && sttScore==0 {
         return "Tap the mic to start speaking..."
+    } else if intonationScore>=80 && sttScore>=90 {
+        return "Perfect match! \nBoth your rhythm and pronunciation are flawless!"
+    } else if intonationScore>=65 && sttScore<50 {
+        return "Great melody! \nYour intonation is spot on, but check your pronunciation."
+    } else if intonationScore<40 && sttScore>=80 {
+        return "Clear pronunciation! \nThe words are correct, but try to ride the rhythm of the graph."
+    } else if intonationScore>=40 && sttScore>=50 {
+        return "Good effort! \nYou're getting there. Listen to the reference and try one more time."
+    } else {
+        return "Let's try again! \nFocus on both the words and the shape of the graph."
     }
 }

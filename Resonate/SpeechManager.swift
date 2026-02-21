@@ -18,15 +18,17 @@ struct AudioSample: Identifiable {
     let frequency: Double // 주파수/높낮이 (그래프 색상)
 }
 
-class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
+class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     private var synthesizer = AVSpeechSynthesizer()
     private let audioEngine = AVAudioEngine()
     
     @Published var myData: [AudioSample] = []
     @Published var isRecording = false
+    @Published var isPlayingRecorded = false
+    @Published var isPlayingReference = false
     
-    private var audioFile: AVAudioFile?
     private var audioPlayer: AVAudioPlayer?
+    private var audioFile: AVAudioFile?
     var recordingURL: URL?
     
     @Published var targetData: [AudioSample] = []
@@ -37,7 +39,9 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         super.init()
         let tempDir = FileManager.default.temporaryDirectory
         self.recordingURL = tempDir.appendingPathComponent("myVoice.m4a")
+        self.synthesizer.delegate = self
     }
+    
     
     
     private func setAudioSession(isRecording: Bool){
@@ -80,9 +84,12 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             setAudioSession(isRecording: false)
             audioPlayer?.stop()
             audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.delegate = self
             audioPlayer?.volume = 1.0
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
+            
+            DispatchQueue.main.async{self.isPlayingRecorded = true}
         } catch {
             print("fail to play audio: \(error)")
         }
@@ -94,14 +101,13 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             synthesizer.stopSpeaking(at: .immediate)
         }
         
-        if isRecording {
-            print("")
-        }
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
         utterance.rate = 0.4
         
+        synthesizer.delegate = self
         synthesizer.speak(utterance)
+        DispatchQueue.main.async {self.isPlayingReference = true}
     }
     
     
@@ -283,5 +289,19 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         let ratio = Double(matchCount)/Double(targetWords.count)
         return min(ratio*100, 100.0)
     }
+    
+    func audioPlayerDidFinishPlaying(_ play: AVAudioPlayer, successfully flag: Bool) {
+        DispatchQueue.main.async {
+            self.isPlayingRecorded = false
+        }
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance){
+        DispatchQueue.main.async {
+            self.isPlayingReference = false
+        }
+    }
+
 }
+
 

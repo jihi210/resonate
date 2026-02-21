@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct LearningSoundApp: App {
+struct ResonateApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
