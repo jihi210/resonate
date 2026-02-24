@@ -137,8 +137,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showAppInfoSheet) {
-//                AppInfoView()
-                Text("App Info View")
+                AppInfoView()
             }
         }
     }

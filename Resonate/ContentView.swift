@@ -22,10 +22,10 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Resonate")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
+//            Text("Resonate")
+//                .font(.largeTitle)
+//                .fontWeight(.bold)
+//            
             HStack(alignment: .center, spacing: 15) {
                 Text(practiceText)
                     .font(.title2)
@@ -79,7 +79,7 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 } else {
                     HStack(alignment: .top){
-                        Text("\(myScore) points / 100")
+                        Text("\(myScore) points /100")
                             .font(.title3)
                             .foregroundColor(.secondary)
                         
@@ -90,9 +90,10 @@ struct ContentView: View {
                                 .font(.title3)
                                 .foregroundColor(.gray)
                         }
-                        .offset(y: 5)
                     }
-                    
+                    Text("meaning: \(Int(sttScore)), intonation: \(Int(intonationScore))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     Text(getFeedbackMessage(intonationScore: intonationScore, sttScore: sttScore))
                         .font(.headline)
                         .multilineTextAlignment(.center)
@@ -100,8 +101,8 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 120)
-            .background(Color.blue.opacity(0.05))
+            .frame(height: 140)
+//            .background(Color.blue.opacity(0.05))
             .cornerRadius(15)
             .padding(.horizontal, 20)
             

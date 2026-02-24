@@ -7,46 +7,116 @@
 
 import SwiftUI
 struct ScoreInfoView: View{
+    @State private var isAnimating2 = false
     @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 30){
-                    Text("How we calculate your score?")
-                        .font(.title2)
+            TabView {
+                VStack(spacing: 40) {
+                    Text("Step 1")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                                
+                    Text("Extract Pitch Data")
+                        .font(.largeTitle)
                         .fontWeight(.bold)
-                        .padding(.bottom, 10)
-                    InfoRow(icon: "waveform.path.ecg",
-                            title: "1. Pitch Tracking",
-                            description: "We extract the 'pitch' (frequency) of your voice, ignoring volume or background noise.")
+                                
+                    ZStack {
+                        Rectangle()
+                            .frame(height: 2)
+                            .foregroundColor(.gray.opacity(0.5))
                     
-                    InfoRow(icon: "arrow.up.and.down.text.horizontal",
-                            title: "2. Voice Normalization",
-                            description: "Everyone has a different natural voice pitch (e.g., male vs. female). We normalize the data to focus entirely on the 'shape' and 'flow' of your intonation, regardless of how high or low your baseline voice is.")
-                    
-                    InfoRow(icon: "clock.arrow.2.circlepath",
-                            title: "3. Time Alignment",
-                            description: "People speak at different speeds. We mathematically align your voice graph to perfectly match the native speaker's timing.")
-                    
-                    InfoRow(icon: "percent",
-                            title: "4. Intonation Match",
-                            description: "Finally, we overlap the two graphs. The closer your intonation's shape and rhythm match the native speaker's, the higher your score!")
-                }
-                .padding(25)
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar{
-                ToolbarItem(placement: .navigationBarTrailing){
-                    Button {
-                        dismiss()
-                    } label : {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                            .font(.title3)
+                        Image(systemName: "waveform.path.ecg")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 200)
+                            .foregroundColor(.blue)
+                        
+                        HStack(spacing: 40) {
+                            ForEach(0..<4) { index in
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 15, height: 15)
+                            }
+                        }
                     }
+                    .frame(height: 200)
+                    
+                    Text("Finding the exact pitch using\nZero-Crossing Count!")
+                        .multilineTextAlignment(.center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .tag(0)
+                
+                VStack(spacing: 40) {
+                    Text("Step 2")
+                        .font(.headline)
+                        .foregroundColor(.green)
+                    
+                    Text("Normalize & Resample")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    VStack(spacing: 30) {
+                        WaveShape()
+                            .stroke(Color.blue, lineWidth: 3)
+                            .frame(width: 250, height: 80)
+                        
+                        WaveShape()
+                            .stroke(Color.red, lineWidth: 3)
+                            .frame(width: 250, height: 80)
+                            .scaleEffect(
+                                x: isAnimating2 ? 1.0 : 0.6,
+                                y: isAnimating2 ? 1.0 : 1.5,
+                                anchor: .leading
+                            )
+                            .animation(
+                                .easeInOut(duration: 1.5)
+                                .repeatForever(autoreverses: true),
+                                value: isAnimating2
+                            )
+                    }
+                    .frame(height: 250)
+                    
+                    Text("Fitting the range (Amplitude)\nand length (Time) to compare!")
+                        .multilineTextAlignment(.center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .onAppear {
+                    isAnimating2 = true
+                }
+                .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") { dismiss() }
                 }
             }
         }
+    }
+}
+
+struct WaveShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let midHeight = rect.height / 2
+        let width = rect.width
+        let wavelength = width / 3
+        
+        path.move(to: CGPoint(x: 0, y: midHeight))
+        
+        for x in stride(from: 0, through: width, by: 1) {
+            let relativeX = x / wavelength
+            let sine = sin(relativeX * .pi * 2)
+            let y = midHeight - (sine * midHeight)
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
     }
 }
 
@@ -76,6 +146,12 @@ struct AppInfoView: View {
                             title: "3. Practice & Repeat",
                             description: "Tap the mic button and repeat the sentence, trying to match the curve of the graph.")
                     
+                    Divider()
+                        .padding(.vertical, 10)
+                    
+                    InfoRow(icon: "person.wave.2.fill",
+                            title: "Tip: Choose Your Tutor Voice",
+                            description: "Go to your iPhone's \n[Settings > Accessibility > Spoken Content > Voices] \nand download your favorite voice. \nHigher quality voices will be prioritized.")
                 }
                 .padding(25)
             }

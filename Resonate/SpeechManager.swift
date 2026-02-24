@@ -100,14 +100,22 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
-        
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: language)
+        let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
+        if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
+            utterance.voice = premiumVoice
+        } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
+            utterance.voice = enhancedVoice
+        } else {
+            utterance.voice = AVSpeechSynthesisVoice(language: language)
+        }
+        print("선택된 목소리는 \(utterance.voice?.name ?? "알 수 없음") 입니다. 퀄리티: \(utterance.voice?.quality.rawValue ?? 0)")
         utterance.rate = 0.4
         
         synthesizer.delegate = self
         synthesizer.speak(utterance)
         DispatchQueue.main.async {self.isPlayingReference = true}
+        
     }
     
     
@@ -164,7 +172,16 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         self.targetData.removeAll()
     
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: language)
+        
+        let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
+        if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
+            utterance.voice = premiumVoice
+        } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
+            utterance.voice = enhancedVoice
+        } else {
+            utterance.voice = AVSpeechSynthesisVoice(language: language)
+        }
+        
         utterance.rate = 0.4
         
         synthesizer.write(utterance) { buffer in
