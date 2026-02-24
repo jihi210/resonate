@@ -21,11 +21,7 @@ struct ContentView: View {
     
     
     var body: some View {
-        VStack(spacing: 20) {
-//            Text("Resonate")
-//                .font(.largeTitle)
-//                .fontWeight(.bold)
-//            
+        VStack(spacing: 20) {    
             HStack(alignment: .center, spacing: 15) {
                 Text(practiceText)
                     .font(.title2)
@@ -102,7 +98,6 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
-//            .background(Color.blue.opacity(0.05))
             .cornerRadius(15)
             .padding(.horizontal, 20)
             
@@ -112,17 +107,21 @@ struct ContentView: View {
                 Button(action: {
                     if speechManager.isRecording {
                         speechManager.stopRecording()
-                        let pearsonScore = speechManager.pearsonScore()
-                        self.intonationScore = pearsonScore
-                        if let audioURL = speechManager.recordingURL {
-                            speechManager.sttScore(audioURL: audioURL, targetText: practiceText, languageCode: selectedLanguage) { sttScore in
-                                DispatchQueue.main.async {
-                                    self.sttScore = sttScore
-                                    self.myScore = Int((pearsonScore*0.7)+(sttScore*0.3))
-                                    print("\(self.myScore)/100점! (억양: \(Int(pearsonScore)), 발음: \(Int(sttScore)))")
+                        speechManager.pearsonScore() { pearsonScore in
+                            DispatchQueue.main.async {
+                                self.intonationScore = pearsonScore
+                            }
+                            if let audioURL = speechManager.recordingURL {
+                                speechManager.sttScore(audioURL: audioURL, targetText: practiceText, languageCode: selectedLanguage) { sttScore in
+                                    DispatchQueue.main.async {
+                                        self.sttScore = sttScore
+                                        self.myScore = Int((pearsonScore*0.7)+(sttScore*0.3))
+                                        print("\(self.myScore)/100점! (억양: \(Int(pearsonScore)), 발음: \(Int(sttScore)))")
+                                    }
                                 }
                             }
                         }
+        
                     } else {
                         speechManager.startRecording()
                         myScore = 0

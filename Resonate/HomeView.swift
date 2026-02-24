@@ -20,6 +20,8 @@ struct HomeView: View {
         ("I'm looking forward to it!", "en-US", "🇺🇸"),
         ("같이 밥 먹을래?", "ko-KR", "🇰🇷")
     ]
+    @State private var showScoreInfoTest = false
+    private let languageRecognizer = NLLanguageRecognizer()
     
     var body: some View {
         NavigationView {
@@ -73,19 +75,22 @@ struct HomeView: View {
                                 .submitLabel(.done)
                                 .onSubmit {
                                     if !customText.isEmpty {
-                                        let detectedLang = detectLanguage(for: customText)
-                                        let flag = getFlag(for: detectedLang)
-                                        
-                                        if !recommendedSentences.contains(where: {$0.0==customText}) {
-                                            recommendedSentences.append((customText, detectedLang, flag))
+                                        detectLanguage(for: customText) { detectedLang in
+                                            let flag = getFlag(for: detectedLang)
+                                            
+                                            if !recommendedSentences.contains(where: {$0.0==customText}) {
+                                                recommendedSentences.append((customText, detectedLang, flag))
+                                            }
+                                            targetText = customText
+                                            targetLang = detectedLang
+                                            navigateToCustom = true
                                         }
-                                        targetText = customText
-                                        targetLang = detectedLang
-                                        navigateToCustom = true
+                                        
                                         DispatchQueue.main.asyncAfter(deadline: .now()+0.5){
                                             customText = ""
                                             isTypingCustom = false
                                         }
+                     
                                     }
                                 }
                                 
@@ -123,6 +128,7 @@ struct HomeView: View {
                         destination: ContentView(practiceText: targetText, selectedLanguage: targetLang),
                         isActive: $navigateToCustom
                     ) {EmptyView()}
+                    
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
@@ -139,20 +145,29 @@ struct HomeView: View {
             .sheet(isPresented: $showAppInfoSheet) {
                 AppInfoView()
             }
+ 
         }
     }
-    private func detectLanguage(for text: String) -> String {
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(text)
-        guard let langCode = recognizer.dominantLanguage?.rawValue else {return "en-US"}
-        
-        switch langCode {
-        case "ko": return "ko-KR"
-        case "en": return "en-US"
-        case "es": return "es-ES"
-        case "zh", "zh-Hans", "zh-Hant": return "zh-CN"
-        case "ja": return "ja-JP"
-        default: return "en-US" // 기본값은 영어
+    private func detectLanguage(for text: String, completion: @escaping (String) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async{
+            self.languageRecognizer.reset()
+            self.languageRecognizer.processString(text)
+            
+            let langCode = self.languageRecognizer.dominantLanguage?.rawValue ?? "en-US"
+            let resultCode: String
+            switch langCode {
+                case "ko": resultCode = "ko-KR"
+                case "en": resultCode = "en-US"
+                case "es": resultCode = "es-ES"
+                case "zh", "zh-Hans", "zh-Hant": resultCode = "zh-CN"
+                case "ja": resultCode = "ja-JP"
+                default: resultCode = "en-US" // 기본값은 영어
+            }
+            
+            DispatchQueue.main.async{
+                completion(resultCode)
+            }
+            
         }
     }
     

@@ -21,6 +21,7 @@ struct AudioSample: Identifiable {
 class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     private var synthesizer = AVSpeechSynthesizer()
     private let audioEngine = AVAudioEngine()
+    private var recognizers: [String: SFSpeechRecognizer] = [:]
     
     @Published var myData: [AudioSample] = []
     @Published var isRecording = false
@@ -40,6 +41,12 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         let tempDir = FileManager.default.temporaryDirectory
         self.recordingURL = tempDir.appendingPathComponent("myVoice.m4a")
         self.synthesizer.delegate = self
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            _=AVSpeechSynthesisVoice.speechVoices()
+            _=SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+            _=SFSpeechRecognizer(locale: Locale(identifier: "ko-KR"))
+        }
     }
     
     
@@ -168,7 +175,9 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
     }
     
     func createReference(text: String, language: String = "en-US") {
-        synthesizer = AVSpeechSynthesizer()
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
         self.targetData.removeAll()
     
         let utterance = AVSpeechUtterance(string: text)
@@ -194,25 +203,36 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         }
     }
     
-    func pearsonScore() -> Double {
-        let targetFreqs = targetData.map { $0.frequency }
-        let myFreqs = myData.map { $0.frequency }
-        let normTarget = normalize(targetFreqs)
-        let normMy = normalize(myFreqs)
-        
-        guard targetFreqs.count>1, myFreqs.count>1 else {return 0}
-        
-        let resampledTarget = resample(normTarget, to:100)
-        let resampledMy = resample(normMy, to:100)
-        
-        let correlation = pearsonCorrelation(x: resampledTarget, y: resampledMy)
-        var intonationScore = 0.0
-        if correlation>0 {
-            intonationScore = correlation*100
-        } else {
-            intonationScore = 0
+    func pearsonScore(completion: @escaping (Double) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async() {
+            let targetFreqs = self.targetData.map { $0.frequency }
+            let myFreqs = self.myData.map { $0.frequency }
+            let normTarget = self.normalize(targetFreqs)
+            let normMy = self.normalize(myFreqs)
+            
+            guard targetFreqs.count>1, myFreqs.count>1 else {
+                DispatchQueue.main.async {
+                    completion(0.0)
+                }
+                return
+            }
+            
+            let resampledTarget = self.resample(normTarget, to:100)
+            let resampledMy = self.resample(normMy, to:100)
+            
+            let correlation = self.pearsonCorrelation(x: resampledTarget, y: resampledMy)
+            var intonationScore = 0.0
+            if correlation>0 {
+                intonationScore = correlation*100
+            } else {
+                intonationScore = 0
+            }
+            
+            DispatchQueue.main.async {
+                completion(intonationScore)
+            }
         }
-        return intonationScore
+        
     }
     
     private func normalize(_ data:[Double]) -> [Double] {
@@ -270,11 +290,25 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         } else {
             localeIdentifier = languageCode
         }
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)), recognizer.isAvailable else {
+        let recognizer: SFSpeechRecognizer
+        if let catchedRecognizer = recognizers[localeIdentifier] {
+            recognizer = catchedRecognizer
+        } else {
+            guard let newRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)) else {
+                print("음성 인식을 사용할 수 없습니다. (언어: \(localeIdentifier))")
+                completion(0.0)
+                return
+            }
+            recognizers[localeIdentifier] = newRecognizer
+            recognizer = newRecognizer
+        }
+        
+        guard recognizer.isAvailable else {
             print("음성 인식을 사용할 수 없습니다. (언어: \(localeIdentifier))")
             completion(0.0)
             return
         }
+        
         let request = SFSpeechURLRecognitionRequest(url: audioURL)
         recognizer.recognitionTask(with: request) { result, error in
             if let error = error {

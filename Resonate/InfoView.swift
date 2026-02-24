@@ -7,16 +7,18 @@
 
 import SwiftUI
 struct ScoreInfoView: View{
-    @State private var isAnimating2 = false
+    @State private var matchLength = false    // 1단계: 가로 길이 맞추기
+    @State private var matchAmplitude = false // 2단계: 세로 진폭 맞추기
+    let referenceData: [Double] = [0.2, 0.3, 0.25, 0.6, 0.9, 0.7, 0.4, 0.3, 0.2, 0.3, 0.25, 0.5, 0.8, 0.6, 0.3, 0.2]
+    let userData: [Double] = [0.1, 0.2, 0.15, 0.5, 0.95, 0.8, 0.3, 0.2, 0.1, 0.2, 0.15, 0.4, 0.9, 0.7, 0.2, 0.1]
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         NavigationView {
             TabView {
-                VStack(spacing: 40) {
+                VStack(spacing: 45) {
                     Text("Step 1")
-                        .font(.headline)
-                        .foregroundColor(.blue)
+                        .font(.title3)
                                 
                     Text("Extract Pitch Data")
                         .font(.largeTitle)
@@ -49,46 +51,165 @@ struct ScoreInfoView: View{
                         .foregroundColor(.secondary)
                 }
                 .tag(0)
+                .offset(x:0, y:-30)
                 
-                VStack(spacing: 40) {
+                VStack(spacing: 45) {
                     Text("Step 2")
-                        .font(.headline)
-                        .foregroundColor(.green)
+//                        .font(.headline)
+                        .font(.title3)
+                    
                     
                     Text("Normalize & Resample")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    VStack(spacing: 30) {
-                        WaveShape()
-                            .stroke(Color.blue, lineWidth: 3)
-                            .frame(width: 250, height: 80)
-                        
-                        WaveShape()
-                            .stroke(Color.red, lineWidth: 3)
-                            .frame(width: 250, height: 80)
+                    ZStack {
+                        WaveShape(dataPoints: referenceData)
+                            .stroke(Color.gray.opacity(0.5), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                            .frame(width: 300, height: 150)
+                            .drawingGroup()
+                        WaveShape(dataPoints: userData)
+                            .stroke(
+                                LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+                            )
                             .scaleEffect(
-                                x: isAnimating2 ? 1.0 : 0.6,
-                                y: isAnimating2 ? 1.0 : 1.5,
+                                x: matchLength ? 1.0 : 0.7,
+                                y: matchAmplitude ? 1.0 : 1.3,
                                 anchor: .leading
                             )
-                            .animation(
-                                .easeInOut(duration: 1.5)
-                                .repeatForever(autoreverses: true),
-                                value: isAnimating2
-                            )
+                            .frame(width: 300, height: 150)
+                            .drawingGroup()
+                        
+                        HStack(spacing: 0) {
+                            Image(systemName: "arrowtriangle.left.fill").font(.system(size: 12))
+                            Rectangle().frame(height: 2) // 얇은 선
+                            Image(systemName: "arrowtriangle.right.fill").font(.system(size: 12))
+                        }
+                        .foregroundColor(.blue.opacity(0.8))
+                        .frame(width: 300)
+                        .opacity(matchLength ? 0 : 1)
+                        .offset(y: 95)
+
+                        VStack(spacing: 0) {
+                            Image(systemName: "arrowtriangle.up.fill").font(.system(size: 12))
+                            Rectangle().frame(width: 2) // 얇은 선
+                            Image(systemName: "arrowtriangle.down.fill").font(.system(size: 12))
+                        }
+                        .foregroundColor(.purple.opacity(0.8))
+                        .frame(height: 150)
+                        .opacity((matchLength && !matchAmplitude) ? 1 : 0)
+                        .offset(x: 170)
                     }
-                    .frame(height: 250)
+                    .frame(height: 200)
                     
-                    Text("Fitting the range (Amplitude)\nand length (Time) to compare!")
-                        .multilineTextAlignment(.center)
-                        .font(.body)
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 10) {
+                        Text("Fitting the range (Amplitude)\n length (Time) to compare!")
+                            .multilineTextAlignment(.center)
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                    }
+                    
                 }
+                .offset(x:0, y:-30)
                 .onAppear {
-                    isAnimating2 = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 1.5)) {
+                            matchLength = true
+                        }
+                    }
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation(.easeInOut(duration: 1.5)) {
+                            matchAmplitude = true
+                        }
+                    }
                 }
-                .tag(1)
+                
+                VStack(spacing: 45) {
+                    Text("Step 3")
+                        .font(.title3)
+                    
+                    
+                    Text("Scoring")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    VStack {
+                        HStack(spacing: 25) {
+                            ZStack {
+                                WaveShape(dataPoints: referenceData)
+                                    .stroke(Color.gray.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                                    .drawingGroup()
+                                WaveShape(dataPoints: userData)
+                                    .stroke(
+                                        LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing),
+                                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                                    )
+                                    .drawingGroup()
+                            }
+                            .frame(width: 140, height: 40)
+                            
+                            // -> 60 / 70 일케 ? 실제 점수 표시
+                            VStack(alignment: .trailing) {
+                                Text("Intonation (Pearson)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("60 / 70")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.purple)
+                            }
+                        }
+                        .padding()
+                        .frame(width: 330, height: 90)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(12)
+                            
+                        // Image(systemName: "plus")
+                    
+                        HStack(spacing: 25) {
+                            // Text(레퍼런스 문장)
+                            // Text(발음된 문장) [레퍼런스 문장이랑 세로 배치)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Ref: I am a student")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("You: I am a student")
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                            }
+                            .frame(width: 140)
+                
+                            // -> 30 / 30 여기도 실제 점수 표시
+                            VStack(alignment: .trailing) {
+                                Text("Pronunciation (STT)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("30 / 30")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.blue)
+                            }
+                            
+                        }
+                        .padding()
+                        .frame(width: 330, height: 90)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(12)
+                        
+                    }
+                    .frame(height: 200)
+                        
+                    VStack(spacing: 10) {
+                        Text("Calculate your final score. \nIt reflects both pronunciation and intonation.")
+                            .multilineTextAlignment(.center)
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                    }
+                        
+                }
+                .offset(x:0, y:-30)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -102,23 +223,27 @@ struct ScoreInfoView: View{
 }
 
 struct WaveShape: Shape {
+    let dataPoints: [Double]
+    
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        let midHeight = rect.height / 2
+        guard dataPoints.count > 1 else {return path}
         let width = rect.width
-        let wavelength = width / 3
+        let height = rect.height
+        let stepX = width/CGFloat(dataPoints.count-1)
         
-        path.move(to: CGPoint(x: 0, y: midHeight))
+        path.move(to: CGPoint(x: 0, y: height*(1.0-CGFloat(dataPoints[0]))))
         
-        for x in stride(from: 0, through: width, by: 1) {
-            let relativeX = x / wavelength
-            let sine = sin(relativeX * .pi * 2)
-            let y = midHeight - (sine * midHeight)
+        for index in 1..<dataPoints.count {
+            let x = stepX*CGFloat(index)
+            let y = height*(1.0-CGFloat(dataPoints[index]))
             path.addLine(to: CGPoint(x: x, y: y))
         }
         return path
     }
 }
+
+
 
 struct AppInfoView: View {
     @Environment(\.dismiss) var dismiss
