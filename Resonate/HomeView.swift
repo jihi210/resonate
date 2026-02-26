@@ -1,9 +1,3 @@
-//
-//  HomeView.swift
-//  Resonate
-//
-//  Created by 윤지희 on 2/20/26.
-//
 import SwiftUI
 import NaturalLanguage
 
@@ -11,6 +5,7 @@ struct HomeView: View {
     @State private var customText: String = ""
     @State private var isTypingCustom: Bool = false
     @State private var showAppInfoSheet = false
+    @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
     @State private var navigateToCustom: Bool = false
     
     @FocusState private var isInputFocused: Bool
@@ -24,7 +19,7 @@ struct HomeView: View {
     private let languageRecognizer = NLLanguageRecognizer()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20){
                     Text("Today's sentences")
@@ -124,10 +119,6 @@ struct HomeView: View {
                             
                         }
                     }
-                    NavigationLink(
-                        destination: ContentView(practiceText: targetText, selectedLanguage: targetLang),
-                        isActive: $navigateToCustom
-                    ) {EmptyView()}
                     
                 }
                 .padding(.horizontal, 20)
@@ -142,10 +133,18 @@ struct HomeView: View {
                     }
                 }
             }
+            .onAppear {
+                if isFirstLaunch {
+                    showAppInfoSheet = true
+                    isFirstLaunch = false
+                }
+            }
             .sheet(isPresented: $showAppInfoSheet) {
                 AppInfoView()
             }
- 
+            .navigationDestination(isPresented: $navigateToCustom) {
+                ContentView(practiceText: targetText, selectedLanguage: targetLang)
+            }
         }
     }
     private func detectLanguage(for text: String, completion: @escaping (String) -> Void) {
@@ -161,7 +160,7 @@ struct HomeView: View {
                 case "es": resultCode = "es-ES"
                 case "zh", "zh-Hans", "zh-Hant": resultCode = "zh-CN"
                 case "ja": resultCode = "ja-JP"
-                default: resultCode = "en-US" // 기본값은 영어
+                default: resultCode = "unknown"
             }
             
             DispatchQueue.main.async{
@@ -178,7 +177,7 @@ struct HomeView: View {
             case "es-ES": return "🇪🇸"
             case "zh-CN": return "🇨🇳"
             case "ja-JP": return "🇯🇵"
-            default: return "💬" // 감지할 수 없는 언어는 말풍선으로!
+            default: return "💬"
         }
     }
 }

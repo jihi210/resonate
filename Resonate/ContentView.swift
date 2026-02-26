@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  LearningSound
-//
-//  Created by 윤지희 on 1/18/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -25,7 +18,7 @@ struct ContentView: View {
             HStack(alignment: .center, spacing: 15) {
                 Text(practiceText)
                     .font(.title2)
-                    .multilineTextAlignment(.leading) // 문장이 길면 왼쪽 정렬
+                    .multilineTextAlignment(.leading)
                     .foregroundColor(.gray)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -42,7 +35,7 @@ struct ContentView: View {
             .padding(.horizontal)
             .padding(.top, 25)
             
-            // 그래프 영역
+
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.black.opacity(0.05))
@@ -66,7 +59,6 @@ struct ContentView: View {
             .clipped()
             .padding(.horizontal, 20)
             
-            // 변환된 텍스트
             VStack(spacing: 10) {
                 if myScore == 0{
                     Text("Tap the mic to start speaking...")
@@ -154,7 +146,10 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            speechManager.createReference(text: practiceText, language: selectedLanguage)
+            DispatchQueue.main.asyncAfter(deadline: .now()+0.3){
+                speechManager.createReference(text: practiceText, language: selectedLanguage)
+            }
+            
         }
         .alert("There is no recorded voice!", isPresented: $showNoAlert) {
             Button("OK", role: .cancel){}
@@ -163,20 +158,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showInfo){
             ScoreInfoView()
-        }
-    }
-    
-    // 주파수(Hz)를 색상으로 바꿔주는 함수
-    func getColor(for frequency: Float) -> LinearGradient {
-        // 사람 목소리는 보통 85Hz(남자 저음) ~ 255Hz(여자 고음) 사이
-        // 400Hz 넘어가면 매우 높은 소리
-        
-        if frequency < 150 {
-            return LinearGradient(colors: [.blue, .purple], startPoint: .bottom, endPoint: .top) // 저음
-        } else if frequency < 300 {
-            return LinearGradient(colors: [.green, .yellow], startPoint: .bottom, endPoint: .top) // 중음
-        } else {
-            return LinearGradient(colors: [.orange, .red], startPoint: .bottom, endPoint: .top) // 고음
         }
     }
     
@@ -196,10 +177,7 @@ struct PitchLineShape: Shape {
         
         for (index, sample) in samples.enumerated() {
             let x = rect.width*CGFloat(index) / CGFloat(samples.count - 1)
-            // 상대적 높이 계산 (0.0 ~ 1.0)
             let relativePitch = (sample.frequency - minFreq) / (range > 0 ? range : 1)
-                        
-            // Y좌표 변환 (높을수록 위로 가야 하므로 1 - relative)
             let y = rect.height * (1 - CGFloat(relativePitch))
                         
             if index == 0 {

@@ -1,14 +1,7 @@
-//
-//  InfoView.swift
-//  LearningSound
-//
-//  Created by 윤지희 on 2/20/26.
-//
-
 import SwiftUI
 struct ScoreInfoView: View{
-    @State private var matchLength = false    // 1단계: 가로 길이 맞추기
-    @State private var matchAmplitude = false // 2단계: 세로 진폭 맞추기
+    @State private var matchLength = false
+    @State private var matchAmplitude = false
     let referenceData: [Double] = [0.2, 0.3, 0.25, 0.6, 0.9, 0.7, 0.4, 0.3, 0.2, 0.3, 0.25, 0.5, 0.8, 0.6, 0.3, 0.2]
     let userData: [Double] = [0.1, 0.2, 0.15, 0.5, 0.95, 0.8, 0.3, 0.2, 0.1, 0.2, 0.15, 0.4, 0.9, 0.7, 0.2, 0.1]
     @Environment(\.dismiss) var dismiss
@@ -35,7 +28,7 @@ struct ScoreInfoView: View{
                             .frame(width: 200)
                             .foregroundColor(.blue)
                         
-                        HStack(spacing: 40) {
+                        HStack(spacing: 20) {
                             ForEach(0..<4) { index in
                                 Circle()
                                     .fill(Color.red)
@@ -43,7 +36,7 @@ struct ScoreInfoView: View{
                             }
                         }
                     }
-                    .frame(height: 200)
+                    .frame(height: 250)
                     
                     Text("Finding the exact pitch using\nZero-Crossing Count!")
                         .multilineTextAlignment(.center)
@@ -55,7 +48,6 @@ struct ScoreInfoView: View{
                 
                 VStack(spacing: 45) {
                     Text("Step 2")
-//                        .font(.headline)
                         .font(.title3)
                     
                     
@@ -83,7 +75,7 @@ struct ScoreInfoView: View{
                         
                         HStack(spacing: 0) {
                             Image(systemName: "arrowtriangle.left.fill").font(.system(size: 12))
-                            Rectangle().frame(height: 2) // 얇은 선
+                            Rectangle().frame(height: 2)
                             Image(systemName: "arrowtriangle.right.fill").font(.system(size: 12))
                         }
                         .foregroundColor(.blue.opacity(0.8))
@@ -93,7 +85,7 @@ struct ScoreInfoView: View{
 
                         VStack(spacing: 0) {
                             Image(systemName: "arrowtriangle.up.fill").font(.system(size: 12))
-                            Rectangle().frame(width: 2) // 얇은 선
+                            Rectangle().frame(width: 2)
                             Image(systemName: "arrowtriangle.down.fill").font(.system(size: 12))
                         }
                         .foregroundColor(.purple.opacity(0.8))
@@ -101,7 +93,7 @@ struct ScoreInfoView: View{
                         .opacity((matchLength && !matchAmplitude) ? 1 : 0)
                         .offset(x: 170)
                     }
-                    .frame(height: 200)
+                    .frame(height: 250)
                     
                     VStack(spacing: 10) {
                         Text("Fitting the range (Amplitude)\n length (Time) to compare!")
@@ -150,7 +142,6 @@ struct ScoreInfoView: View{
                             }
                             .frame(width: 140, height: 40)
                             
-                            // -> 60 / 70 일케 ? 실제 점수 표시
                             VStack(alignment: .trailing) {
                                 Text("Intonation (Pearson)")
                                     .font(.caption)
@@ -158,19 +149,15 @@ struct ScoreInfoView: View{
                                 Text("60 / 70")
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.purple)
+                                    .foregroundColor(.blue)
                             }
                         }
                         .padding()
                         .frame(width: 330, height: 90)
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(12)
-                            
-                        // Image(systemName: "plus")
                     
                         HStack(spacing: 25) {
-                            // Text(레퍼런스 문장)
-                            // Text(발음된 문장) [레퍼런스 문장이랑 세로 배치)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Ref: I am a student")
                                     .font(.caption)
@@ -181,7 +168,6 @@ struct ScoreInfoView: View{
                             }
                             .frame(width: 140)
                 
-                            // -> 30 / 30 여기도 실제 점수 표시
                             VStack(alignment: .trailing) {
                                 Text("Pronunciation (STT)")
                                     .font(.caption)
@@ -199,7 +185,7 @@ struct ScoreInfoView: View{
                         .cornerRadius(12)
                         
                     }
-                    .frame(height: 200)
+                    .frame(height: 250)
                         
                     VStack(spacing: 10) {
                         Text("Calculate your final score. \nIt reflects both pronunciation and intonation.")

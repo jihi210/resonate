@@ -1,27 +1,19 @@
-//
-//  SpeechManager.swift
-//  LearningSound
-//
-//  Created by 윤지희 on 2/6/26.
-//
 import SwiftUI
 import Combine
-import Foundation
-import Speech // to STT
-import AVFoundation
-import Accelerate // [핵심] 애플의 고속 수학 계산 라이브러리
+import Speech
+import Accelerate
 
-// 데이터를 담을 구조체 (크기와 높낮이 정보를 동시에 가짐)
 struct AudioSample: Identifiable {
     let id = UUID()
-    let magnitude: Float // 소리 크기 (그래프 높이)
-    let frequency: Double // 주파수/높낮이 (그래프 색상)
+    let magnitude: Float
+    let frequency: Double
 }
 
 class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     private var synthesizer = AVSpeechSynthesizer()
     private let audioEngine = AVAudioEngine()
     private var recognizers: [String: SFSpeechRecognizer] = [:]
+    private var voices: [String: AVSpeechSynthesisVoice] = [:]
     
     @Published var myData: [AudioSample] = []
     @Published var isRecording = false
@@ -33,8 +25,6 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
     var recordingURL: URL?
     
     @Published var targetData: [AudioSample] = []
-    private var onSynthesisFinished: (([AudioSample]) -> Void)?
-    
     
     override init() {
         super.init()
@@ -55,7 +45,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         let session = AVAudioSession.sharedInstance()
         do{
             if isRecording {
-                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
             } else {
                 try session.setCategory(.playback, mode: .default)
             }
@@ -66,63 +56,78 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
     }
     
     func startRecording() {
-        setAudioSession(isRecording: true)
-        myData.removeAll()
-        let inputNode = audioEngine.inputNode
-        let format = inputNode.outputFormat(forBus: 0)
-        
-        if let url = self.recordingURL {
-            self.audioFile = try? AVAudioFile(forWriting: url, settings: format.settings)
+        DispatchQueue.global(qos: .userInitiated).async(){
+            self.setAudioSession(isRecording: true)
+            
+            DispatchQueue.main.async{
+                self.myData.removeAll()
+            }
+            
+            let inputNode = self.audioEngine.inputNode
+            let format = inputNode.outputFormat(forBus: 0)
+            
+            if let url = self.recordingURL {
+                self.audioFile = try? AVAudioFile(forWriting: url, settings: format.settings)
+            }
+            inputNode.removeTap(onBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { (buffer, when) in
+                self.analyze(buffer: buffer)
+                try? self.audioFile?.write(from: buffer)
+            }
+            
+            self.audioEngine.prepare()
+            try? self.audioEngine.start()
         }
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { (buffer, when) in
-            self.analyze(buffer: buffer)
-            try? self.audioFile?.write(from: buffer)
+        DispatchQueue.main.async{
+            self.isRecording = true
         }
         
-        audioEngine.prepare()
-        try? audioEngine.start()
-        isRecording = true
+        
     }
     
     func playRecording(){
         guard let url = recordingURL else {return}
-        do {
-            setAudioSession(isRecording: false)
-            audioPlayer?.stop()
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.delegate = self
-            audioPlayer?.volume = 1.0
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-            
-            DispatchQueue.main.async{self.isPlayingRecorded = true}
-        } catch {
-            print("fail to play audio: \(error)")
+        DispatchQueue.global(qos: .userInitiated).async{
+            do {
+                self.setAudioSession(isRecording: false)
+                self.audioPlayer?.stop()
+                self.audioPlayer = try AVAudioPlayer(contentsOf: url)
+                self.audioPlayer?.delegate = self
+                self.audioPlayer?.volume = 1.0
+                self.audioPlayer?.prepareToPlay()
+                self.audioPlayer?.play()
+                
+                DispatchQueue.main.async{self.isPlayingRecorded = true}
+            } catch {
+                print("fail to play audio: \(error)")
+            }
         }
+        
     }
     
     func playReference(text: String, language: String) {
-        setAudioSession(isRecording: false)
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.setAudioSession(isRecording: false)
+            if self.synthesizer.isSpeaking {
+                self.synthesizer.stopSpeaking(at: .immediate)
+            }
+            let utterance = AVSpeechUtterance(string: text)
+            let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
+            if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
+                utterance.voice = premiumVoice
+            } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
+                utterance.voice = enhancedVoice
+            } else {
+                utterance.voice = AVSpeechSynthesisVoice(language: language)
+            }
+            print("selected voice is \(utterance.voice?.name ?? "unknown") quality: \(utterance.voice?.quality.rawValue ?? 0)")
+            utterance.rate = 0.4
+            
+            self.synthesizer.delegate = self
+            self.synthesizer.speak(utterance)
+            DispatchQueue.main.async {self.isPlayingReference = true}
         }
-        let utterance = AVSpeechUtterance(string: text)
-        let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
-        if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
-            utterance.voice = premiumVoice
-        } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
-            utterance.voice = enhancedVoice
-        } else {
-            utterance.voice = AVSpeechSynthesisVoice(language: language)
-        }
-        print("선택된 목소리는 \(utterance.voice?.name ?? "알 수 없음") 입니다. 퀄리티: \(utterance.voice?.quality.rawValue ?? 0)")
-        utterance.rate = 0.4
-        
-        synthesizer.delegate = self
-        synthesizer.speak(utterance)
-        DispatchQueue.main.async {self.isPlayingReference = true}
-        
     }
     
     
@@ -138,29 +143,27 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         synthesizer.stopSpeaking(at: .immediate)
     }
     
-    // [핵심] 오디오 데이터를 분석하는 함수
     private func analyze(buffer: AVAudioPCMBuffer) {
         guard let sample = extractPitch(from: buffer) else { return }
         
         DispatchQueue.main.async {
-            // 소리가 너무 작으면(잡음) 분석 안 함
-            if sample.magnitude > 1.5 { // 잡음 필터 상향 0.5 -> 1.5
+            if sample.magnitude > 1.5 {
                 self.myData.append(sample)
                 if self.myData.count > 50 { self.myData.removeFirst() }
             }
         }
     }
     
+    //MARK: audio analysis
     private func extractPitch(from buffer: AVAudioPCMBuffer) -> AudioSample? {
         guard let channelData = buffer.floatChannelData?[0] else { return nil }
         let length = Int(buffer.frameLength)
         guard length>0 else { return nil }
         
-        //볼륨
-        let rms = sqrt(stride(from:0, to:length, by:1).map {pow(channelData[$0], 2)}.reduce(0, +)/Float(length))
+        var rms: Float = 0.0
+        vDSP_rmsqv(channelData, 1, &rms, vDSP_Length(length))
         
-        //피치 - 제로 크로싱(Zero Crossing) 방식 (가벼운 버전)
-        // (진짜 정밀한 FFT는 코드가 너무 길어져서, 학생 수준에서 충분한 제로 크로싱을 사용)
+
         var zeroCrossings = 0
         for i in 1..<length {
             if (channelData[i-1] > 0 && channelData[i] <= 0) || (channelData[i-1] <= 0 && channelData[i] > 0) {
@@ -168,41 +171,51 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
             }
         }
         
-        // 제로 크로싱 횟수를 주파수로 대략 변환
         let frequency = Double(zeroCrossings) / (Double(length) / Double(buffer.format.sampleRate)) / 2.0
         return AudioSample(magnitude: rms*50, frequency: frequency)
         
     }
     
-    func createReference(text: String, language: String = "en-US") {
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
-        }
-        self.targetData.removeAll()
-    
-        let utterance = AVSpeechUtterance(string: text)
-        
-        let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
-        if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
-            utterance.voice = premiumVoice
-        } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
-            utterance.voice = enhancedVoice
-        } else {
-            utterance.voice = AVSpeechSynthesisVoice(language: language)
-        }
-        
-        utterance.rate = 0.4
-        
-        synthesizer.write(utterance) { buffer in
-            guard let pcmBuffer = buffer as? AVAudioPCMBuffer else {return}
-            if let sample = self.extractPitch(from: pcmBuffer){
-                DispatchQueue.main.async{
-                    self.targetData.append(sample)
+    func createReference(text: String, language: String = "en-US", quality: String = "premium") {
+        DispatchQueue.global(qos: .userInitiated).async {
+            if self.synthesizer.isSpeaking {
+                self.synthesizer.stopSpeaking(at: .immediate)
+            }
+            
+            DispatchQueue.main.async{
+                self.targetData.removeAll()
+            }
+            
+            let utterance = AVSpeechUtterance(string: text)
+            let cacheKey = "\(language)-\(quality)"
+            if let cachedVoice = self.voices[cacheKey] {
+                utterance.voice = cachedVoice
+            } else {
+                let voices = AVSpeechSynthesisVoice.speechVoices().filter{$0.language == language}
+                if let premiumVoice = voices.first(where: {$0.quality == .premium}) {
+                    utterance.voice = premiumVoice
+                } else if let enhancedVoice = voices.first(where: { $0.quality == .enhanced }) {
+                    utterance.voice = enhancedVoice
+                } else {
+                    utterance.voice = AVSpeechSynthesisVoice(language: language)
+                }
+                self.voices[cacheKey]=utterance.voice
+            }
+            
+            utterance.rate = 0.4
+            
+            self.synthesizer.write(utterance) { buffer in
+                guard let pcmBuffer = buffer as? AVAudioPCMBuffer else {return}
+                if let sample = self.extractPitch(from: pcmBuffer){
+                    DispatchQueue.main.async{
+                        self.targetData.append(sample)
+                    }
                 }
             }
         }
     }
     
+    //MARK: intonation scoring
     func pearsonScore(completion: @escaping (Double) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async() {
             let targetFreqs = self.targetData.map { $0.frequency }
@@ -250,18 +263,16 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
             let upperIndex = min(lowerIndex+1, data.count-1)
             let weight = index - Double(lowerIndex)
             
-            //선형보간법
             result.append(data[lowerIndex]*(1-weight)+data[upperIndex]*weight)
         }
         return result
     }
     
     private func pearsonCorrelation(x: [Double], y: [Double]) -> Double {
-        //선형 보간 제대로 안됐으면 비교 불가
         guard x.count == y.count, x.count>0 else { return 0.0 }
         
         let n = Double(x.count)
-        let meanX = x.reduce(0, +)/n // 타켓 그래프의 평균값
+        let meanX = x.reduce(0, +)/n
         let meanY = y.reduce(0, +)/n
         
         var numerator = 0.0
@@ -279,6 +290,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         return numerator/sqrt(denomX*denomY)
     }
     
+    //MARK: pronunciation scoring
     func sttScore(audioURL: URL, targetText: String, languageCode: String, completion: @escaping(Double) -> Void) {
         var localeIdentifier = "en-US"
         if languageCode.hasPrefix("ko"){
@@ -295,7 +307,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
             recognizer = catchedRecognizer
         } else {
             guard let newRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)) else {
-                print("음성 인식을 사용할 수 없습니다. (언어: \(localeIdentifier))")
+                
                 completion(0.0)
                 return
             }
@@ -304,7 +316,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         }
         
         guard recognizer.isAvailable else {
-            print("음성 인식을 사용할 수 없습니다. (언어: \(localeIdentifier))")
+            print("not availble to speech regonize (language: \(localeIdentifier))")
             completion(0.0)
             return
         }
@@ -312,7 +324,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         let request = SFSpeechURLRecognitionRequest(url: audioURL)
         recognizer.recognitionTask(with: request) { result, error in
             if let error = error {
-                print("STT 에러 발생: \(error.localizedDescription)")
+                print("STT error: \(error.localizedDescription)")
                 completion(0.0)
                 return
             }
@@ -320,7 +332,7 @@ class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
             
             if result.isFinal {
                 let recognizedText = result.bestTranscription.formattedString
-                print("[\(localeIdentifier)] 내가 말한 문장: \(recognizedText)")
+                print("[\(localeIdentifier)] sentence: \(recognizedText)")
                 let matchScore = self.textSimilarity(target: targetText, recognized: recognizedText)
                 completion(matchScore)
             }
