@@ -79,6 +79,15 @@ Resonate는 이러한 답답함을 해결하기 위해 개발되었습니다. �
 * 해결: Speech 프레임워크를 이용한 STT 인식 결과 일치도(30%)와 피어슨 상관계수 점수(70%)를 결합한 하이브리드 채점 방식을 개발하여, 의미 전달의 정확성과 시각적 억양 교정을 동시에 만족시켰습니다.
 
 
+<div style="display: flex; overflow-x: auto; white-space: nowrap;">
+  <img width="590" height="1278" alt="screenshot1" src="https://github.com/user-attachments/assets/9a1ca8d0-94bf-4e02-8ea4-8b483f1da327" />
+  <img width="590" height="1278" alt="screenshot2" src="https://github.com/user-attachments/assets/340dc76e-b6ab-4c3c-adb2-da6671a2c959" />
+</div>
+
+## 화면 캡쳐
+
+
+
 
 ---
 
@@ -87,3 +96,5 @@ Resonate는 이러한 답답함을 해결하기 위해 개발되었습니다. �
 * 피드백 다양화: 현재는 하드코딩된 피드백 함수를 사용하고 있으나, 추후 사용자 개별 데이터 및 빈출 오류 패턴을 분석하는 엔진을 도입하여 다채롭고 개인화된 피드백을 제공할 예정입니다.
 * 레퍼런스 자연스러움 개선: 현재 무한한 문장 확장성을 위해 TTS 기반의 레퍼런스를 생성하고 있으나 원어민의 발음과 피치 흐름에 최대한 가깝고 자연스럽게 다듬는 작업을 할 예정입니다.
 * 실시간 문장 유추 기능: 텍스트 입력 없이 말만 해도 STT로 문장을 즉석에서 뽑아내어 바로 채점 및 피드백을 해주는 기능을 UI 구조 개선과 함께 추가할 계획입니다.
+
+
