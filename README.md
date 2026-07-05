@@ -80,8 +80,8 @@ Resonate는 이러한 답답함을 해결하기 위해 개발되었습니다. �
 
 
 <div style="display: flex; overflow-x: auto; white-space: nowrap;">
-  <img width="100" alt="screenshot1" src="https://github.com/user-attachments/assets/9a1ca8d0-94bf-4e02-8ea4-8b483f1da327" />
-  <img width="100" alt="screenshot2" src="https://github.com/user-attachments/assets/340dc76e-b6ab-4c3c-adb2-da6671a2c959" />
+  <img width="250" alt="screenshot1" src="https://github.com/user-attachments/assets/9a1ca8d0-94bf-4e02-8ea4-8b483f1da327" />
+  <img width="250" alt="screenshot2" src="https://github.com/user-attachments/assets/340dc76e-b6ab-4c3c-adb2-da6671a2c959" />
 </div>
 
 ## 화면 캡쳐
