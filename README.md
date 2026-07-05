@@ -79,12 +79,12 @@ Resonate는 이러한 답답함을 해결하기 위해 개발되었습니다. �
 * 해결: Speech 프레임워크를 이용한 STT 인식 결과 일치도(30%)와 피어슨 상관계수 점수(70%)를 결합한 하이브리드 채점 방식을 개발하여, 의미 전달의 정확성과 시각적 억양 교정을 동시에 만족시켰습니다.
 
 
+## 화면 캡쳐
+
 <div style="display: flex; overflow-x: auto; white-space: nowrap;">
   <img width="250" alt="screenshot1" src="https://github.com/user-attachments/assets/9a1ca8d0-94bf-4e02-8ea4-8b483f1da327" />
   <img width="250" alt="screenshot2" src="https://github.com/user-attachments/assets/340dc76e-b6ab-4c3c-adb2-da6671a2c959" />
 </div>
-
-## 화면 캡쳐
 
 
 
